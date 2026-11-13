@@ -315,6 +315,20 @@ st.markdown("""<style>
 [data-baseweb="popover"] [role="listbox"], [data-baseweb="popover"] [role="option"] {background:#FFFFFF !important;color:#252525 !important;}
 [data-testid="stDialog"] [role="dialog"] {max-height:85dvh !important;overflow-y:auto !important;}
 
+
+/* Five equal navigation cells spanning the entire phone viewport. */
+.st-key-bottom_nav{left:0 !important;right:0 !important;bottom:0 !important;transform:none !important;width:100% !important;max-width:none !important;padding:8px 0 calc(8px + env(safe-area-inset-bottom)) !important;overflow:visible !important;}
+.st-key-bottom_nav [data-testid="stRadio"],.st-key-bottom_nav [data-testid="stRadio"]>div{width:100% !important;max-width:none !important;}
+.st-key-bottom_nav [role="radiogroup"]{display:grid !important;grid-template-columns:repeat(5,minmax(0,1fr)) !important;align-items:center !important;gap:0 !important;width:100% !important;margin:0 !important;}
+.st-key-bottom_nav [role="radiogroup"] label{display:flex !important;align-items:center !important;justify-content:center !important;justify-self:stretch !important;width:100% !important;min-width:0 !important;min-height:50px !important;padding:0 !important;margin:0 !important;position:relative !important;box-sizing:border-box !important;}
+.st-key-bottom_nav [role="radiogroup"] label>div:first-child{display:none !important;width:0 !important;height:0 !important;}
+.st-key-bottom_nav input[type="radio"]{position:absolute !important;opacity:0 !important;width:0 !important;height:0 !important;}
+.st-key-bottom_nav [role="radiogroup"] label [data-testid="stMarkdownContainer"]{width:100% !important;text-align:center !important;}
+.st-key-bottom_nav [role="radiogroup"] label p{margin:0 !important;font-size:12px !important;line-height:1.7 !important;text-align:center !important;white-space:pre-line !important;}
+.st-key-bottom_nav [role="radiogroup"] label:nth-child(3){justify-self:center !important;width:70px !important;height:70px !important;min-height:70px !important;border-radius:50% !important;background:#D92D4C !important;margin:-25px 0 0 !important;box-shadow:0 4px 15px #D92D4C44 !important;}
+.st-key-bottom_nav [role="radiogroup"] label:nth-child(3) p{color:#FFFFFF !important;font-size:22px !important;line-height:1.1 !important;font-weight:800 !important;}
+.block-container{padding-bottom:115px !important;}
+
 </style>""",unsafe_allow_html=True)
 
 @st.dialog('📅 날짜 확인 · 안 되는 날 표시')
