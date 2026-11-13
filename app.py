@@ -482,10 +482,10 @@ def finish_dialog(state,rev,valid,agreed):
             if not confirm:st.warning('실제 진행 여부를 확인해 주세요.');return
             encoded=None
             if upload is not None:
-                if upload.size>10*1024*1024:st.error('10MB 이하 사진을 선택해 주세요.');return
+                if upload.size>10*1024*1024:st.error('오류: 사진 크기가 10MB를 넘습니다. 더 작은 사진을 선택해 주세요.');return
                 try:
                     image=ImageOps.exif_transpose(Image.open(upload));image.thumbnail((1600,1600));out=io.BytesIO();image.convert('RGB').save(out,format='JPEG',quality=85);encoded=base64.b64encode(out.getvalue()).decode()
-                except Exception:st.error('사진을 읽지 못했어요. 다른 사진을 선택해 주세요.');return
+                except Exception:st.error('오류: 사진을 읽지 못했어요. JPG·PNG·WEBP 사진으로 다시 선택해 주세요.');return
             item=copy.deepcopy(current);item.update(completed=finished.isoformat(),review=note,outcome='완료',image=encoded)
             state['history'].append(item);state['next_draw']=add_months(finished,COOLDOWN[current['category']]).isoformat();state['current']=None
             commit(state,rev,'추억을 저장했어요.')
@@ -506,6 +506,29 @@ st.markdown("""<style>
 [data-testid="stDialog"] [data-testid="stFileUploaderFile"]{background:#F7F7F8 !important;color:#252525 !important;}
 [data-testid="stDialog"] [data-testid="stFileUploader"] small{color:#555555 !important;}
 </style>""",unsafe_allow_html=True)
+st.markdown("""<style>
+/* Neutral outlines including focus states: red is reserved for written errors. */
+[data-testid="stTextArea"] [data-baseweb="textarea"],
+[data-testid="stTextInput"] [data-baseweb="input"],
+[data-testid="stDateInput"] [data-baseweb="input"]{background:#FFFFFF !important;border:1px solid #333333 !important;box-shadow:none !important;outline:none !important;}
+[data-testid="stTextArea"] [data-baseweb="textarea"]:focus-within,
+[data-testid="stTextInput"] [data-baseweb="input"]:focus-within,
+[data-testid="stDateInput"] [data-baseweb="input"]:focus-within{border-color:#333333 !important;box-shadow:none !important;outline:none !important;}
+[data-testid="stTextArea"] textarea,[data-testid="stTextInput"] input,[data-testid="stDateInput"] input{background:#FFFFFF !important;color:#252525 !important;-webkit-text-fill-color:#252525 !important;border-color:#333333 !important;outline:none !important;box-shadow:none !important;}
+[data-testid="stFileUploaderDropzone"]{background:#F5F5F5 !important;color:#252525 !important;border:1px solid #333333 !important;}
+[data-testid="stFileUploaderDropzone"] button,[data-testid="stFileUploaderDropzone"] button:hover{background:#FFFFFF !important;border:1px solid #333333 !important;color:#252525 !important;opacity:1 !important;}
+[data-testid="stFileUploaderDropzone"] button *,[data-testid="stFileUploaderDropzone"] p,[data-testid="stFileUploaderDropzone"] span,[data-testid="stFileUploaderDropzone"] small{color:#333333 !important;-webkit-text-fill-color:#333333 !important;opacity:1 !important;}
+[data-testid="stFileUploaderDropzone"] svg{color:#333333 !important;fill:currentColor !important;}
+</style>""",unsafe_allow_html=True)
+@st.dialog('쿨타임 초기화')
+def reset_cooldown_dialog(state,rev):
+    st.write('다음 추첨까지의 대기 기간만 해제합니다. 행사·사진·후기·달력은 유지돼요.')
+    if state.get('current'):
+        st.info('진행 중인 행사는 유지되므로 새 추첨은 해당 행사 종료 후 가능합니다.')
+    if st.button('쿨타임만 초기화',type='primary',use_container_width=True):
+        state['next_draw']=None
+        commit(state,rev,'쿨타임을 초기화했어요.')
+
 st.title('🍀 WATO')
 
 try:state,rev=load()
@@ -708,6 +731,8 @@ with mem:
                 raw=base64.b64decode(photos[idx]['image']);st.image(raw,width=200);st.download_button('기존 사진 다운로드',raw,'wato_legacy.jpg','image/jpeg')
 with extra:
     with st.container(border=False):
+        if st.button('⏱ 쿨타임 초기화',use_container_width=True):
+            reset_cooldown_dialog(state,rev)
         if st.button('🗑 모두 초기화',use_container_width=True):
             reset_all_dialog(rev)
         with st.expander('전체 행사 후보 · 각 유형 14개'):
