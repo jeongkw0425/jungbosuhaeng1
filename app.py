@@ -470,7 +470,17 @@ st.markdown("""<style>
 .countdown-card{text-align:center;border-radius:24px;background:#FFF3F5;padding:40px 16px;margin:24px 0;color:#252525;}
 .countdown-card .dday{font-size:64px;font-weight:900;line-height:1.4;color:#D92D4C;}
 </style>""",unsafe_allow_html=True)
-with st.container(key='bottom_nav'):
+st.markdown("""<style>
+.block-container{padding-bottom:1rem !important;}
+.st-key-top_nav{position:static !important;width:100% !important;margin:8px 0 14px;}
+.st-key-top_nav [role="radiogroup"]{display:grid !important;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px !important;width:100%;}
+.st-key-top_nav [role="radiogroup"] label{display:flex;justify-content:center;align-items:center;min-width:0;margin:0 !important;padding:9px 0 !important;border:1px solid #E7E7E7;border-radius:10px;background:#FFF4F6;}
+.st-key-top_nav [role="radiogroup"] label>div:first-child{display:none !important;}
+.st-key-top_nav [role="radiogroup"] label p{text-align:center;white-space:pre-line;font-size:12px !important;line-height:1.5 !important;margin:0;}
+.st-key-top_nav input[type="radio"]{position:absolute;opacity:0;width:0;height:0;}
+.st-key-top_nav label:has(input:checked){border-color:#D92D4C;background:#FFE4EA;}
+</style>""",unsafe_allow_html=True)
+with st.container(key='top_nav'):
     page=st.radio('메뉴',['🎲\n다음 행사','📅\n달력','⌂\n홈','📸\n추억','⚙️\n더보기'],index=2,horizontal=True,label_visibility='collapsed',key='wato_page')
 if page=='⌂\n홈':
     import html as html_escape
@@ -489,7 +499,7 @@ if page=='⌂\n홈':
             rest=(date.fromisoformat(state['next_draw'])-TODAY).days
             if rest>0:dday=f'D-{rest}';subtitle='다음 행사 추첨까지 · 지금은 쉬어가는 시간'
     st.markdown(f'<div class="countdown-card"><p>{html_escape.escape(subtitle)}</p><div class="dday">{html_escape.escape(dday)}</div><h3>{html_escape.escape(title)}</h3><p>WE ARE THE ONE · 우리 가족의 다음 추억</p></div>',unsafe_allow_html=True)
-    st.caption('아래 가운데 홈 버튼을 누르면 언제든 이 화면으로 돌아와요.')
+    st.caption('상단 홈 메뉴를 누르면 언제든 이 화면으로 돌아와요.')
 
 if page=='🎲\n다음 행사':
     current=state['current'];next_date=date.fromisoformat(state['next_draw']) if state['next_draw'] else TODAY
