@@ -443,8 +443,41 @@ if c2.button('사용자 변경'):
     st.session_state.date_select_mode=False
     st.rerun()
 if c3.button('새로고침'):st.rerun()
-home,cal,mem,extra=st.tabs(['🎲 다음 행사','📅 가족 달력','📸 추억','⚙️ 더보기'])
-with home:
+st.markdown("""<style>
+.block-container{padding-bottom:100px !important;}
+.st-key-bottom_nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,480px);background:#FFFFFF;z-index:999;padding:10px 6px calc(10px + env(safe-area-inset-bottom));border-top:1px solid #EEEEEE;box-shadow:0 -3px 18px #0000000D;box-sizing:border-box;}
+.st-key-bottom_nav [role="radiogroup"]{display:flex !important;flex-wrap:nowrap !important;gap:0 !important;justify-content:space-around;align-items:center;}
+.st-key-bottom_nav [data-testid="stRadio"]>label{display:none;}
+.st-key-bottom_nav [role="radiogroup"] label{margin:0 !important;flex:1;justify-content:center;min-width:0;}
+.st-key-bottom_nav [role="radiogroup"] label>div:first-child{display:none !important;}
+.st-key-bottom_nav [role="radiogroup"] label p{font-size:11px !important;text-align:center;white-space:pre-line;line-height:1.5 !important;}
+.st-key-bottom_nav [role="radiogroup"] label:nth-child(3){flex:none;width:64px;height:64px;border-radius:50%;background:#D92D4C !important;margin-top:-28px !important;box-shadow:0 4px 14px #D92D4C44;}
+.st-key-bottom_nav [role="radiogroup"] label:nth-child(3) p{color:white !important;font-size:20px !important;font-weight:800;}
+.countdown-card{text-align:center;border-radius:24px;background:#FFF3F5;padding:40px 16px;margin:24px 0;color:#252525;}
+.countdown-card .dday{font-size:64px;font-weight:900;line-height:1.4;color:#D92D4C;}
+</style>""",unsafe_allow_html=True)
+with st.container(key='bottom_nav'):
+    page=st.radio('메뉴',['🎲\n다음 행사','📅\n달력','⌂\n홈','📸\n추억','⚙️\n더보기'],index=2,horizontal=True,label_visibility='collapsed',key='wato_page')
+if page=='⌂\n홈':
+    import html as html_escape
+    current_event=state.get('current')
+    title=(current_event or {}).get('title') or '다음 추억을 준비해요'
+    if current_event and current_event.get('scheduled'):
+        event_date=datetime.fromisoformat(current_event['scheduled'][0]).date()
+        gap=(event_date-TODAY).days
+        dday=f'D-{gap}' if gap>0 else ('D-DAY' if gap==0 else f'D+{-gap}')
+        subtitle=f'{event_date:%Y년 %m월 %d일} · 가족 행사'
+    elif current_event:
+        dday='날짜 미정';subtitle='다음 행사에서 가족이 가능한 날짜를 정해 주세요.'
+    else:
+        dday='함께할 날';subtitle='다음 행사에서 새로운 추억을 뽑아 보세요.'
+        if state.get('next_draw'):
+            rest=(date.fromisoformat(state['next_draw'])-TODAY).days
+            if rest>0:dday=f'D-{rest}';subtitle='다음 행사 추첨까지 · 지금은 쉬어가는 시간'
+    st.markdown(f'<div class="countdown-card"><p>{html_escape.escape(subtitle)}</p><div class="dday">{html_escape.escape(dday)}</div><h3>{html_escape.escape(title)}</h3><p>WE ARE THE ONE · 우리 가족의 다음 추억</p></div>',unsafe_allow_html=True)
+    st.caption('아래 가운데 홈 버튼을 누르면 언제든 이 화면으로 돌아와요.')
+
+if page=='🎲\n다음 행사':
     current=state['current'];next_date=date.fromisoformat(state['next_draw']) if state['next_draw'] else TODAY
     if not current:
         st.markdown('<div class="card"><b>우리 가족의 다음 행사는?</b><br>소목 80% · 중목 15% · 대목 5%<br>분류 추첨 → 행사 추첨, 두 단계로 진행해요.</div>',unsafe_allow_html=True)
@@ -510,7 +543,8 @@ with home:
             agreed=all(votes.get(m)==current['scheduled'] for m in state['members'])
             with st.expander('행사 완료 기록'):
                 with st.form('finish'):
-                    finished=st.date_input('실제로 마친 날짜',value=TODAY,max_value=TODAY)
+                    finished=st.date_input('실제로 마친 날짜',value=TODAY)
+                    st.caption('행사 예정일과 관계없이 날짜를 선택할 수 있어요. 선택한 날짜부터 쿨타임을 계산해요.')
                     note=st.text_area('한 줄 후기',max_chars=1000,placeholder='기억에 남은 순간을 적어주세요.')
                     confirm=st.checkbox('가족 모두 실제 진행을 확인했습니다.')
                     if st.form_submit_button('완료하고 휴식 시작',disabled=not (valid and agreed)):
@@ -522,7 +556,7 @@ with home:
         if st.button('행사 진행이 어려워요',use_container_width=True):
             cancel_event_dialog(state,rev)
 
-with cal:
+if page=='📅\n달력':
     st.session_state.setdefault('date_selection',[])
     st.session_state.setdefault('date_select_mode',False)
     st.caption('선택 → 날짜 여러 개 누르기 → 한 번에 안 되는 날로 저장')
@@ -557,7 +591,7 @@ with cal:
     if nxt.button('다음달 ▶',use_container_width=True):
         d=add_months(date(y,m,1),1);st.session_state.month=(d.year,d.month);st.rerun()
     if st.session_state.date_select_mode:
-        st.caption('날짜 위를 손가락이나 마우스로 쓸어서 선택하세요. 선택된 날에서 시작하면 해제됩니다.')
+        st.caption('날짜를 손가락으로 쓸어서 여러 날을 선택하세요. 선택한 날짜에서 시작하면 선택이 해제돼요.')
         value=drag_calendar(y,m,st.session_state.date_selection)
         if value is not None:
             other=[d for d in st.session_state.date_selection if not d.startswith(f'{y:04d}-{m:02d}-')]
@@ -587,7 +621,7 @@ with cal:
                             st.session_state.date_selection=sorted(values)
                             st.rerun()
                         else:day_dialog(d)
-with mem:
+if page=='📸\n추억':
     st.subheader('우리 가족의 추억')
     import base64,io
     from PIL import Image,ImageOps
@@ -626,7 +660,7 @@ with mem:
             st.write(h.get('review') or '작성된 후기가 없어요.')
             if h.get('scheduled'):st.caption(' ~ '.join(h['scheduled']))
     st.download_button('우리 가족 기록 내려받기',json.dumps(state,ensure_ascii=False,indent=2),'wato_backup.json','application/json')
-with extra:
+if page=='⚙️\n더보기':
     if st.button('🗑 모두 초기화',use_container_width=True):
         reset_all_dialog(rev)
     with st.expander('전체 행사 후보 · 각 유형 14개'):
