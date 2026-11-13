@@ -480,28 +480,8 @@ st.markdown("""<style>
 .st-key-top_nav input[type="radio"]{position:absolute;opacity:0;width:0;height:0;}
 .st-key-top_nav label:has(input:checked){border-color:#D92D4C;background:#FFE4EA;}
 </style>""",unsafe_allow_html=True)
-with st.container(key='top_nav'):
-    page=st.radio('메뉴',['🎲\n다음 행사','📅\n달력','⌂\n홈','📸\n추억','⚙️\n더보기'],index=2,horizontal=True,label_visibility='collapsed',key='wato_page')
-if page=='⌂\n홈':
-    import html as html_escape
-    current_event=state.get('current')
-    title=(current_event or {}).get('title') or '다음 추억을 준비해요'
-    if current_event and current_event.get('scheduled'):
-        event_date=datetime.fromisoformat(current_event['scheduled'][0]).date()
-        gap=(event_date-TODAY).days
-        dday=f'D-{gap}' if gap>0 else ('D-DAY' if gap==0 else f'D+{-gap}')
-        subtitle=f'{event_date:%Y년 %m월 %d일} · 가족 행사'
-    elif current_event:
-        dday='날짜 미정';subtitle='다음 행사에서 가족이 가능한 날짜를 정해 주세요.'
-    else:
-        dday='함께할 날';subtitle='다음 행사에서 새로운 추억을 뽑아 보세요.'
-        if state.get('next_draw'):
-            rest=(date.fromisoformat(state['next_draw'])-TODAY).days
-            if rest>0:dday=f'D-{rest}';subtitle='다음 행사 추첨까지 · 지금은 쉬어가는 시간'
-    st.markdown(f'<div class="countdown-card"><p>{html_escape.escape(subtitle)}</p><div class="dday">{html_escape.escape(dday)}</div><h3>{html_escape.escape(title)}</h3><p>WE ARE THE ONE · 우리 가족의 다음 추억</p></div>',unsafe_allow_html=True)
-    st.caption('상단 홈 메뉴를 누르면 언제든 이 화면으로 돌아와요.')
-
-if page=='🎲\n다음 행사':
+home,cal,mem,extra=st.tabs(['🎲 다음 행사','📅 가족 달력','📸 추억','⚙️ 더보기'])
+with home:
     current=state['current'];next_date=date.fromisoformat(state['next_draw']) if state['next_draw'] else TODAY
     if not current:
         st.markdown('<div class="card"><b>우리 가족의 다음 행사는?</b><br>소목 80% · 중목 15% · 대목 5%<br>분류 추첨 → 행사 추첨, 두 단계로 진행해요.</div>',unsafe_allow_html=True)
@@ -580,7 +560,7 @@ if page=='🎲\n다음 행사':
         if st.button('행사 진행이 어려워요',use_container_width=True):
             cancel_event_dialog(state,rev)
 
-if page=='📅\n달력':
+with cal:
     st.session_state.setdefault('date_selection',[])
     st.session_state.setdefault('date_select_mode',False)
     st.caption('선택 → 날짜 여러 개 누르기 → 한 번에 안 되는 날로 저장')
@@ -645,7 +625,7 @@ if page=='📅\n달력':
                             st.session_state.date_selection=sorted(values)
                             st.rerun()
                         else:day_dialog(d)
-if page=='📸\n추억':
+with mem:
     st.subheader('우리 가족의 추억')
     import base64,io
     from PIL import Image,ImageOps
@@ -684,7 +664,7 @@ if page=='📸\n추억':
             st.write(h.get('review') or '작성된 후기가 없어요.')
             if h.get('scheduled'):st.caption(' ~ '.join(h['scheduled']))
     st.download_button('우리 가족 기록 내려받기',json.dumps(state,ensure_ascii=False,indent=2),'wato_backup.json','application/json')
-if page=='⚙️\n더보기':
+with extra:
     if st.button('🗑 모두 초기화',use_container_width=True):
         reset_all_dialog(rev)
     with st.expander('전체 행사 후보 · 각 유형 14개'):
