@@ -478,7 +478,7 @@ def finish_dialog(state,rev,valid,agreed):
         note=st.text_area('후기 (선택)',max_chars=1000,height=80)
         upload=st.file_uploader('행사 사진 (선택 · 10MB 이하)',type=['jpg','jpeg','png','webp'])
         confirm=st.checkbox('가족 모두 실제 진행을 확인했습니다.')
-        if st.form_submit_button('완료하고 추억 저장',disabled=not(valid and agreed)):
+        if st.form_submit_button('완료하고 추억 저장'):
             if not confirm:st.warning('실제 진행 여부를 확인해 주세요.');return
             encoded=None
             if upload is not None:
@@ -491,19 +491,20 @@ def finish_dialog(state,rev,valid,agreed):
             commit(state,rev,'추억을 저장했어요.')
 
 st.markdown("""<style>
-.block-container{padding-top:max(.55rem,env(safe-area-inset-top)) !important;padding-bottom:0 !important;}
-h1{font-size:1.25rem !important;padding:0 !important;margin:0 !important;}
-h2,h3{font-size:1.02rem !important;padding:.1rem 0 !important;margin:0 !important;}
-[data-testid="stVerticalBlock"]{gap:.25rem !important;}
-[data-testid="stTabs"] [data-baseweb="tab-list"]{gap:8px !important;}
-[data-baseweb="tab"]{height:36px !important;padding:3px !important;}
-[data-baseweb="tab"] p{font-size:12px !important;}
-[class*="st-key-viewport_panel_"]{height:calc(100dvh - 190px) !important;min-height:180px !important;max-height:calc(100dvh - 150px) !important;overflow-y:auto !important;overscroll-behavior:contain;}
-[class*="st-key-viewport_panel_"] p{margin-bottom:.2rem !important;}
-.st-key-monthgrid button,.st-key-monthgrid button:hover{min-height:31px !important;padding:1px 0 !important;}
-.st-key-monthgrid button p{font-size:10px !important;line-height:1.05 !important;}
-[data-testid="stDialog"] [role="dialog"]{max-height:90dvh !important;overflow-y:auto !important;}
-@media(max-height:650px){[class*="st-key-viewport_panel_"]{height:calc(100dvh - 170px) !important;}.st-key-monthgrid button,.st-key-monthgrid button:hover{min-height:27px !important;}}
+.block-container{padding-top:1rem !important;padding-bottom:1rem !important;}
+[data-testid="stVerticalBlock"]{gap:.65rem !important;}
+h1,h2,h3{line-height:1.4 !important;}
+p,label{line-height:1.5 !important;}
+.st-key-monthgrid button,.st-key-monthgrid button:hover{min-height:44px !important;padding:4px 0 !important;}
+.st-key-monthgrid button p{font-size:12px !important;line-height:1.35 !important;}
+</style>""",unsafe_allow_html=True)
+st.markdown("""<style>
+[data-testid="stDialog"] [role="dialog"]{background:#FFFFFF !important;color:#252525 !important;}
+[data-testid="stDialog"] [data-testid="stDateInput"] input{background:#FFFFFF !important;color:#252525 !important;-webkit-text-fill-color:#252525 !important;}
+[data-testid="stDialog"] [data-testid="stDateInput"] [data-baseweb="input"]{background:#FFFFFF !important;}
+[data-testid="stDialog"] [data-testid="stFileUploaderDropzone"],
+[data-testid="stDialog"] [data-testid="stFileUploaderFile"]{background:#F7F7F8 !important;color:#252525 !important;}
+[data-testid="stDialog"] [data-testid="stFileUploader"] small{color:#555555 !important;}
 </style>""",unsafe_allow_html=True)
 st.title('🍀 WATO')
 
@@ -550,7 +551,7 @@ st.markdown("""<style>
 </style>""",unsafe_allow_html=True)
 home,cal,mem,extra=st.tabs(['🎲 다음 행사','📅 가족 달력','📸 추억','⚙️ 더보기'])
 with home:
-    with st.container(height=450,border=False,key='viewport_panel_0'):
+    with st.container(border=False):
         current=state['current'];next_date=date.fromisoformat(state['next_draw']) if state['next_draw'] else TODAY
         if not current:
             st.markdown('<div class="card"><b>우리 가족의 다음 행사는?</b><br>소목 80% · 중목 15% · 대목 5%<br>분류 추첨 → 행사 추첨, 두 단계로 진행해요.</div>',unsafe_allow_html=True)
@@ -620,7 +621,7 @@ with home:
                 cancel_event_dialog(state,rev)
 
 with cal:
-    with st.container(height=450,border=False,key='viewport_panel_1'):
+    with st.container(border=False):
         st.session_state.setdefault('date_selection',[])
         st.session_state.setdefault('date_select_mode',False)
         st.caption('선택 → 날짜 여러 개 누르기 → 한 번에 안 되는 날로 저장')
@@ -686,7 +687,7 @@ with cal:
                                 st.rerun()
                             else:day_dialog(d)
 with mem:
-    with st.container(height=450,border=False,key='viewport_panel_2'):
+    with st.container(border=False):
         st.subheader('우리 가족의 추억')
         import base64
         completed=[h for h in reversed(state['history']) if h['outcome']=='완료']
@@ -706,7 +707,7 @@ with mem:
                 photos=state['photos'];idx=st.selectbox('사진 선택',range(len(photos)),format_func=lambda i:photos[i].get('description') or f'사진 {i+1}')
                 raw=base64.b64decode(photos[idx]['image']);st.image(raw,width=200);st.download_button('기존 사진 다운로드',raw,'wato_legacy.jpg','image/jpeg')
 with extra:
-    with st.container(height=450,border=False,key='viewport_panel_3'):
+    with st.container(border=False):
         if st.button('🗑 모두 초기화',use_container_width=True):
             reset_all_dialog(rev)
         with st.expander('전체 행사 후보 · 각 유형 14개'):
