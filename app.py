@@ -573,11 +573,33 @@ st.markdown("""<style>
 </style>""",unsafe_allow_html=True)
 @st.dialog('📅 행사 일정 정하기',width='small')
 def schedule_dialog(state,rev):
-    current=state['current']
+    # Dialog interactions rerun independently: always use the latest revision.
+    try:
+        state,rev=load()
+    except (sqlite3.Error,ValueError):
+        st.error('오류: 일정을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.')
+        return
+    current=state.get('current')
+    if not current or not current.get('title') or current.get('scheduled'):
+        st.info('행사 상태가 변경됐어요. 창을 닫고 현재 일정을 확인해 주세요.')
+        return
     with st.form('duration'):
         duration=st.number_input('이동·휴식까지 포함한 연속 필요 시간',min_value=int(current['minimum']),max_value=240,value=int(current['duration']),step=1)
         if st.form_submit_button('필요 시간 적용'):
-            current['duration']=duration;current['votes']={};commit(state,rev,'필요 시간을 변경했습니다.')
+            previous_duration=current['duration']
+            previous_votes=current.get('votes',{}).copy()
+            current['duration']=duration
+            current['votes']={}
+            try:
+                save(state,rev)
+            except (sqlite3.Error,ValueError):
+                current['duration']=previous_duration
+                current['votes']=previous_votes
+                st.error('오류: 필요 시간을 저장하지 못했어요. 다른 가족의 수정이 있었을 수 있으니 다시 적용해 주세요.')
+                return
+            else:
+                rev+=1
+                st.success('필요 시간을 적용했어요. 아래에서 바로 일정을 선택하세요.')
     candidates=slots(state,current['duration'])
     missing=[m for m in state['members'] if not intervals(state,m)]
     if missing:st.info('가능 시간 미등록: '+', '.join(missing))
