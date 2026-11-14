@@ -710,7 +710,10 @@ if active_page=='🎲 다음 행사':
             if st.button('행사 진행이 어려워요',use_container_width=True):
                 cancel_event_dialog(state,rev)
 
-if active_page=='📅 가족 달력':
+@st.fragment
+def render_family_calendar():
+    state,rev=load()
+    user=st.session_state.user
     with st.container(border=False):
         st.session_state.setdefault('date_selection',[])
         st.session_state.setdefault('date_select_mode',False)
@@ -718,7 +721,7 @@ if active_page=='📅 가족 달력':
         if st.button('선택 취소' if st.session_state.date_select_mode else '☑ 날짜 여러 개 선택',use_container_width=True):
             st.session_state.date_select_mode=not st.session_state.date_select_mode
             st.session_state.date_selection=[]
-            st.rerun()
+            st.rerun(scope='fragment')
         if st.session_state.date_select_mode:
             selected_dates=st.session_state.date_selection
             st.caption(f'{len(selected_dates)}일 선택됨 · 다시 누르면 선택 해제')
@@ -738,13 +741,13 @@ if active_page=='📅 가족 달력':
         with st.popover(f'📅 {y}년 {m}월 ▾'):
             yy=st.selectbox('연도',list(range(TODAY.year,LAST.year+1)),index=y-TODAY.year)
             mm=st.selectbox('월',range(1,13),index=m-1)
-            if st.button('이 달로 이동'):st.session_state.month=(yy,mm);st.rerun()
+            if st.button('이 달로 이동'):st.session_state.month=(yy,mm);st.rerun(scope='fragment')
         prev,today_button,nxt=st.columns(3)
         if prev.button('◀ 지난달',use_container_width=True):
-            d=add_months(date(y,m,1),-1);st.session_state.month=(d.year,d.month);st.rerun()
-        if today_button.button('오늘 있는 달로',use_container_width=True):st.session_state.month=(TODAY.year,TODAY.month);st.rerun()
+            d=add_months(date(y,m,1),-1);st.session_state.month=(d.year,d.month);st.rerun(scope='fragment')
+        if today_button.button('오늘 있는 달로',use_container_width=True):st.session_state.month=(TODAY.year,TODAY.month);st.rerun(scope='fragment')
         if nxt.button('다음달 ▶',use_container_width=True):
-            d=add_months(date(y,m,1),1);st.session_state.month=(d.year,d.month);st.rerun()
+            d=add_months(date(y,m,1),1);st.session_state.month=(d.year,d.month);st.rerun(scope='fragment')
         if st.session_state.date_select_mode:
             st.caption('연분홍·저장됨: 이미 안 되는 날 / 진한 빨강: 지금 선택한 날짜. 손가락으로 쓸어서 선택하세요.')
             value=drag_calendar(y,m,st.session_state.date_selection)
@@ -753,7 +756,7 @@ if active_page=='📅 가족 달력':
                 merged=sorted(set(other+value))
                 if merged!=st.session_state.date_selection:
                     st.session_state.date_selection=merged
-                    st.rerun()
+                    st.rerun(scope='fragment')
         else:
             with st.container(key='monthgrid'):
                 st.markdown('<div class="weekdays">'+''.join('<span>'+v+'</span>' for v in '월화수목금토일')+'</div>',unsafe_allow_html=True)
@@ -780,8 +783,11 @@ if active_page=='📅 가족 달력':
                                 if d.isoformat() in values:values.remove(d.isoformat())
                                 else:values.add(d.isoformat())
                                 st.session_state.date_selection=sorted(values)
-                                st.rerun()
+                                st.rerun(scope='fragment')
                             else:day_dialog(d)
+
+if active_page=='📅 가족 달력':
+    render_family_calendar()
 if active_page=='📸 추억':
     with st.container(border=False):
         st.subheader('우리 가족의 추억')
