@@ -426,21 +426,21 @@ def drag_calendar(y,m,selected):
 <style>body{margin:0;font:14px sans-serif;color:#252525;background:white}#grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;touch-action:none;user-select:none}.day{border:1px solid #ddd;border-radius:9px;min-height:36px;display:flex;align-items:center;justify-content:center}.sel{background:#D92D4C;color:white}.disabled{opacity:.3}.saved{background:#FFF0F2;border:2px solid #D92D4C}.saved::after{content:'저장됨';font-size:9px;color:#A51E38}.day{flex-direction:column}.sel.saved{background:#D92D4C;color:white}.sel.saved::after{color:white}.head{text-align:center;padding:5px}</style><div id="grid"></div>
 <script>
 const send=(type,data={})=>parent.postMessage({isStreamlitMessage:true,type,...data},'*');
-let picked=new Set(),drag=false,mode=true,last='',args={};
+let picked=new Set(),drag=false,mode=true,last='',args={},localSeq=0,context='';
 function paint(){document.querySelectorAll('[data-date]').forEach(e=>e.classList.toggle('sel',picked.has(e.dataset.date)))}
 function mark(e){if(!e||!e.dataset.date||e.classList.contains('disabled')||last===e.dataset.date)return;last=e.dataset.date;if(mode)picked.add(last);else picked.delete(last);paint()}
-window.addEventListener('message',e=>{if(e.data.type!=='streamlit:render')return;args=e.data.args;picked=new Set(args.selected);let g=document.getElementById('grid');g.innerHTML='';for(let v of '月火水木金土日'){let x=document.createElement('div');x.className='head';x.textContent=v;g.appendChild(x)};Array.from(g.children).forEach((x,i)=>x.textContent=['월','화','수','목','금','토','일'][i]);for(let item of args.cells){let x=document.createElement('div');if(item.date){x.className='day'+(item.disabled?' disabled':'')+(item.blocked?' saved':'');x.dataset.date=item.date;x.textContent=item.day}else x.className='blank';g.appendChild(x)}paint();send('streamlit:setFrameHeight',{height:g.offsetHeight+8})});
+window.addEventListener('message',e=>{if(e.data.type!=='streamlit:render')return;args=e.data.args;const nextContext=args.context; if(context!==nextContext){context=nextContext;localSeq=0;picked=new Set(args.selected)}else if(!drag && (args.ack||0)>=localSeq){picked=new Set(args.selected)}let g=document.getElementById('grid');g.innerHTML='';for(let v of '月火水木金土日'){let x=document.createElement('div');x.className='head';x.textContent=v;g.appendChild(x)};Array.from(g.children).forEach((x,i)=>x.textContent=['월','화','수','목','금','토','일'][i]);for(let item of args.cells){let x=document.createElement('div');if(item.date){x.className='day'+(item.disabled?' disabled':'')+(item.blocked?' saved':'');x.dataset.date=item.date;x.textContent=item.day}else x.className='blank';g.appendChild(x)}paint();send('streamlit:setFrameHeight',{height:g.offsetHeight+8})});
 let g=document.getElementById('grid');
 g.addEventListener('pointerdown',e=>{let el=e.target.closest('[data-date]');if(!el||el.classList.contains('disabled'))return;e.preventDefault();drag=true;last='';mode=!picked.has(el.dataset.date);g.setPointerCapture(e.pointerId);mark(el)});
 g.addEventListener('pointermove',e=>{if(drag){e.preventDefault();mark(document.elementFromPoint(e.clientX,e.clientY))}});
-function finish(){if(!drag)return;drag=false;send('streamlit:setComponentValue',{value:[...picked].sort()})}
+function finish(){if(!drag)return;drag=false;send('streamlit:setComponentValue',{value:{dates:[...picked].sort(),seq:++localSeq}})}
 g.addEventListener('pointerup',finish);g.addEventListener('pointercancel',finish);
 send('streamlit:componentReady',{apiVersion:1});send('streamlit:setFrameHeight',{height:300});
 </script>"""
     (folder/'index.html').write_text(html,encoding='utf-8')
     component=components.declare_component('wato_drag_dates',path=str(folder))
     cells=[{'date':d.isoformat(),'day':d.day,'blocked':d.isoformat() in state.get('blocked',{}).get(user,[]),'disabled':not TODAY<=d<=LAST} if d.month==m else {} for w in calendar.Calendar(0).monthdatescalendar(y,m) for d in w]
-    return component(cells=cells,selected=selected,key=f'drag_{user}_{y}_{m}',default=None)
+    return component(cells=cells,selected=selected,context=f'{user}_{y}_{m}',ack=st.session_state.get(f'drag_ack_{user}_{y}_{m}',0),key=f'drag_{user}_{y}_{m}',default=None)
 
 def memory_pdf(records,members):
     import io,base64
@@ -751,11 +751,13 @@ def render_family_calendar():
         if st.session_state.date_select_mode:
             st.caption('연분홍·저장됨: 이미 안 되는 날 / 진한 빨강: 지금 선택한 날짜. 손가락으로 쓸어서 선택하세요.')
             value=drag_calendar(y,m,st.session_state.date_selection)
-            if value is not None:
-                other=[d for d in st.session_state.date_selection if not d.startswith(f'{y:04d}-{m:02d}-')]
-                merged=sorted(set(other+value))
-                if merged!=st.session_state.date_selection:
-                    st.session_state.date_selection=merged
+            if isinstance(value,dict):
+                ack_key=f'drag_ack_{user}_{y}_{m}'
+                seq=value.get('seq',0)
+                if seq>st.session_state.get(ack_key,0):
+                    st.session_state[ack_key]=seq
+                    other=[d for d in st.session_state.date_selection if not d.startswith(f'{y:04d}-{m:02d}-')]
+                    st.session_state.date_selection=sorted(set(other+value.get('dates',[])))
                     st.rerun(scope='fragment')
         else:
             with st.container(key='monthgrid'):
