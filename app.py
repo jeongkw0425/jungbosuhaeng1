@@ -603,18 +603,22 @@ def schedule_dialog(state,rev):
 
 # Keep navigation in session state across every widget-triggered rerun.
 NAV_PAGES=['🎲 다음 행사','📅 가족 달력','📸 추억','⚙️ 더보기']
-if st.session_state.get('wato_active_page') not in NAV_PAGES:
-    st.session_state['wato_active_page']=NAV_PAGES[0]
+# Separate durable navigation state from the former radio widget key.
+NAV_IDS=['event','calendar','memories','settings']
+if st.session_state.get('wato_navigation_page') not in NAV_PAGES:
+    saved_page=st.query_params.get('page','event')
+    st.session_state['wato_navigation_page']=NAV_PAGES[NAV_IDS.index(saved_page)] if saved_page in NAV_IDS else NAV_PAGES[0]
 def select_nav_page(page):
-    st.session_state['wato_active_page']=page
+    st.session_state['wato_navigation_page']=page
+    st.query_params['page']=NAV_IDS[NAV_PAGES.index(page)]
 with st.container(key='top_nav'):
     nav_columns=st.columns(4,gap='small')
     for nav_column,page in zip(nav_columns,NAV_PAGES):
-        selected=st.session_state['wato_active_page']==page
+        selected=st.session_state['wato_navigation_page']==page
         nav_column.button(('🔴 ' if selected else '')+page,
             key='nav_button_'+str(NAV_PAGES.index(page)),
             on_click=select_nav_page,args=(page,),use_container_width=True)
-active_page=st.session_state['wato_active_page']
+active_page=st.session_state['wato_navigation_page']
 if active_page=='🎲 다음 행사':
     with st.container(border=False):
         current=state['current'];next_date=date.fromisoformat(state['next_draw']) if state['next_draw'] else TODAY
@@ -708,7 +712,6 @@ if active_page=='📅 가족 달력':
                 merged=sorted(set(other+value))
                 if merged!=st.session_state.date_selection:
                     st.session_state.date_selection=merged
-                    st.rerun()
         else:
             with st.container(key='monthgrid'):
                 st.markdown('<div class="weekdays">'+''.join('<span>'+v+'</span>' for v in '월화수목금토일')+'</div>',unsafe_allow_html=True)
