@@ -36,8 +36,7 @@ EVENTS={
 '중목':[
 ('배낚시 체험',10,1,'운항·기상·멀미·구명조끼 확인'),('겨울 빙어낚시',10,1,'공식 운영장·개최 기간·얼음 안전 확인'),
 ('가족 등산',8,1,'가족 체력에 맞는 낮은 코스'),('뮤지컬 관람',7,1,'공연 일정·예매 확인'),('공연 관람',7,1,'공연 일정·예매 확인'),
-('공주 백제문화제',10,1,'공식 행사명·일정 확인'),('공주 폭죽축제 나들이',9,1,'사용자 제안 행사: 실제 개최 여부·공식 행사명 확인'),
-('천안삼거리 축제 나들이',9,1,'사용자 제안 행사: 실제 개최 여부·공식 행사명 확인'),
+('지역 축제',10,1,'가족이 원하는 지역 축제 선택 · 공식 개최 일정 확인'),
 ('수목원 당일 여행',8,1,''),('가족 야구 직관',8,1,'경기·좌석 예약 확인'),('딸기 수확 체험',7,1,'계절·농장 운영 확인'),
 ('바다 유람선과 식사',10,1,'운항·기상 확인'),('가족 한복·고궁 나들이',8,1,''),('한우 맛집 당일 기차여행',12,1,'운행·예산 확인')],
 '대목':[
@@ -195,7 +194,13 @@ def roulette_animation(labels, weights, selected):
     function paint(rotation){ctx.clearRect(0,0,660,660);ctx.save();ctx.translate(330,330);ctx.rotate(rotation);
       boundaries.forEach((b,i)=>{ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,290,b[0]-Math.PI/2,b[1]-Math.PI/2);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();
       ctx.save();ctx.rotate((b[0]+b[1])/2-Math.PI/2);ctx.translate(185,0);ctx.rotate(Math.PI/2);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='bold '+(cfg.labels.length>8?'21':'32')+'px sans-serif';
-      const label=cfg.labels[i];ctx.fillText(label.length>10?label.slice(0,9)+'…':label,0,0);ctx.restore();});
+      const chars=Array.from(cfg.labels[i].replace(/ /g,''));
+      // Vertical glyphs along each sector's radial centreline, within the wheel.
+      ctx.rotate(-Math.PI/2);
+      ctx.translate(-185,0);
+      const fontSize=Math.min(cfg.labels.length>8?22:30,205/Math.max(chars.length,1));
+      ctx.font='bold '+fontSize+'px sans-serif';ctx.textBaseline='middle';
+      chars.forEach((ch,j)=>{ctx.save();ctx.translate(262-j*(fontSize+2),0);ctx.rotate(Math.PI/2);ctx.fillText(ch,0,0);ctx.restore();});ctx.restore();});
       ctx.beginPath();ctx.arc(0,0,48,0,tau);ctx.fillStyle='#fff';ctx.fill();ctx.fillStyle='#D92D4C';ctx.font='bold 20px sans-serif';ctx.textAlign='center';ctx.fillText('WATO',0,7);ctx.restore();
       ctx.beginPath();ctx.moveTo(312,15);ctx.lineTo(348,15);ctx.lineTo(330,60);ctx.closePath();ctx.fillStyle='#152D41';ctx.fill();}
     function run(){document.getElementById('result').textContent='두근두근… 룰렛이 돌아갑니다!';
@@ -712,6 +717,7 @@ if active_page=='📅 가족 달력':
                 merged=sorted(set(other+value))
                 if merged!=st.session_state.date_selection:
                     st.session_state.date_selection=merged
+                    st.rerun()
         else:
             with st.container(key='monthgrid'):
                 st.markdown('<div class="weekdays">'+''.join('<span>'+v+'</span>' for v in '월화수목금토일')+'</div>',unsafe_allow_html=True)
@@ -766,7 +772,7 @@ if active_page=='⚙️ 더보기':
             reset_cooldown_dialog(state,rev)
         if st.button('🗑 모두 초기화',use_container_width=True):
             reset_all_dialog(rev)
-        with st.popover('전체 행사 후보 · 각 유형 14개',use_container_width=True):
+        with st.popover('전체 행사 후보',use_container_width=True):
             for category,items in EVENTS.items():
                 st.markdown('**'+category+'**')
                 for title,duration,minimum,note in items:st.write('• '+title+((' — '+note) if note else ''))
