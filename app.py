@@ -708,10 +708,16 @@ if active_page=='📅 가족 달력':
                             col.empty()
                             continue
                         count=sum(d.isoformat() not in state.get('blocked',{}).get(n,[]) for n in state['members'])
-                        label=f'{d.day}\n{"✓ 모두" if count==len(state["members"]) else str(count)+"명"}'
+                        available_names=[n for n in state['members'] if d.isoformat() not in state.get('blocked',{}).get(n,[])]
+                        if len(available_names)==len(state['members']):
+                            availability_label='모두 가능'
+                        elif not available_names:
+                            availability_label='모두 불가'
+                        else:
+                            availability_label=' · '.join(available_names)+' 가능'
+                        label=f'{d.day}\n{availability_label}'
                         selected=d.isoformat() in st.session_state.date_selection
                         if selected:label=f'☑ {d.day}\n선택됨'
-                        elif d.isoformat() in state.get('blocked',{}).get(user,[]):label=f'{d.day}\n참여 불가'
                         if col.button(label,key='day'+d.isoformat(),type='primary' if selected else 'secondary',disabled=d.month!=m or not TODAY<=d<=LAST,use_container_width=True):
                             if st.session_state.date_select_mode:
                                 values=set(st.session_state.date_selection)
@@ -750,7 +756,7 @@ if active_page=='⚙️ 더보기':
             for category,items in EVENTS.items():
                 st.markdown('**'+category+'**')
                 for title,duration,minimum,note in items:st.write('• '+title+((' — '+note) if note else ''))
-        with st.popover('가족 이름 설정',use_container_width=True):
+        with st.popover('가족 설정',use_container_width=True):
             st.caption('이름은 쉼표로 구분하세요. 변경하면 이전 이름의 가능 시간은 삭제되고 제안 일정의 확인도 초기화됩니다. 진행 중 행사는 유지됩니다.')
             with st.form('members'):
                 names=st.text_input('가족 이름',value=', '.join(state['members']))
@@ -805,4 +811,26 @@ st.markdown("""<style>
     -webkit-overflow-scrolling: touch;
   }
 }
+</style>""",unsafe_allow_html=True)
+
+# Uniform navigation tiles: no native radio dots, one red active indicator.
+st.markdown("""<style>
+.st-key-top_nav [role="radiogroup"] {grid-template-columns:repeat(4,minmax(0,1fr)) !important;align-items:stretch !important;}
+.st-key-top_nav [role="radiogroup"] label {
+  box-sizing:border-box !important;position:relative !important;
+  width:100% !important;min-width:0 !important;height:54px !important;
+  padding:15px 2px 5px !important;gap:0 !important;
+}
+.st-key-top_nav [role="radiogroup"] label > div:first-of-type {display:none !important;}
+.st-key-top_nav [role="radiogroup"] label [data-testid="stMarkdownContainer"] {display:block !important;min-width:0 !important;}
+.st-key-top_nav [role="radiogroup"] label p {
+  white-space:nowrap !important;word-break:keep-all !important;
+  font-size:12px !important;line-height:20px !important;margin:0 !important;
+}
+.st-key-top_nav [role="radiogroup"] label:has(input:checked)::after {
+  content:"";position:absolute;top:6px;left:calc(50% - 3px);
+  width:6px;height:6px;border-radius:50%;background:#D92D4C;
+}
+.weekdays {height:auto !important;min-height:28px !important;line-height:24px !important;padding:2px 0 !important;overflow:visible !important;}
+.weekdays span {display:block;line-height:24px !important;min-height:24px !important;overflow:visible !important;}
 </style>""",unsafe_allow_html=True)
