@@ -602,8 +602,19 @@ def schedule_dialog(state,rev):
 
 
 # Keep navigation in session state across every widget-triggered rerun.
+NAV_PAGES=['🎲 다음 행사','📅 가족 달력','📸 추억','⚙️ 더보기']
+if st.session_state.get('wato_active_page') not in NAV_PAGES:
+    st.session_state['wato_active_page']=NAV_PAGES[0]
+def select_nav_page(page):
+    st.session_state['wato_active_page']=page
 with st.container(key='top_nav'):
-    active_page=st.radio('메뉴',['🎲 다음 행사','📅 가족 달력','📸 추억','⚙️ 더보기'],key='wato_active_page',horizontal=True,label_visibility='collapsed')
+    nav_columns=st.columns(4,gap='small')
+    for nav_column,page in zip(nav_columns,NAV_PAGES):
+        selected=st.session_state['wato_active_page']==page
+        nav_column.button(('🔴 ' if selected else '')+page,
+            key='nav_button_'+str(NAV_PAGES.index(page)),
+            on_click=select_nav_page,args=(page,),use_container_width=True)
+active_page=st.session_state['wato_active_page']
 if active_page=='🎲 다음 행사':
     with st.container(border=False):
         current=state['current'];next_date=date.fromisoformat(state['next_draw']) if state['next_draw'] else TODAY
@@ -861,4 +872,20 @@ st.markdown("""<style>
 .st-key-top_nav label[data-baseweb="radio"] > div[data-testid="stMarkdownContainer"] {
  display:block !important;
 }
+</style>""",unsafe_allow_html=True)
+
+# Navigation uses plain buttons: no native radio control exists anymore.
+st.markdown("""<style>
+.st-key-top_nav [data-testid="stHorizontalBlock"] {
+ display:flex !important;flex-direction:row !important;flex-wrap:nowrap !important;gap:4px !important;
+}
+.st-key-top_nav [data-testid="stColumn"] {
+ flex:1 1 0 !important;min-width:0 !important;width:0 !important;
+}
+.st-key-top_nav button,.st-key-top_nav button:hover,.st-key-top_nav button:active {
+ width:100% !important;min-height:48px !important;height:48px !important;
+ padding:4px 1px !important;background:#FFF4F6 !important;
+ color:#252525 !important;border:1px solid #E7E7E7 !important;border-radius:10px !important;
+}
+.st-key-top_nav button p {white-space:nowrap !important;font-size:11px !important;line-height:20px !important;margin:0 !important;}
 </style>""",unsafe_allow_html=True)
