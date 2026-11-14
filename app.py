@@ -769,3 +769,23 @@ if active_page=='⚙️ 더보기':
 # Open the animation only after a successful, committed draw.
 if st.session_state.get('roulette_pending'):
     roulette_dialog(**st.session_state.pop('roulette_pending'))
+
+# Mobile-only spacing adjustment; preserve content, order, and accessible overflow.
+st.markdown("""<style>
+@media (max-width: 640px) {
+  .block-container {padding-top:.45rem !important;padding-bottom:.45rem !important;}
+  [data-testid="stHeader"] {height:0 !important;min-height:0 !important;background:transparent !important;}
+  [data-testid="stVerticalBlock"] {gap:.38rem !important;}
+  h1 {font-size:1.65rem !important;padding-top:0 !important;padding-bottom:.2rem !important;}
+  h2,h3 {padding-top:.15rem !important;padding-bottom:.15rem !important;}
+  p {margin-bottom:.25rem !important;}
+  .st-key-top_nav {margin:3px 0 6px !important;}
+  .st-key-top_nav [role="radiogroup"] label {padding:7px 0 !important;}
+  .card {padding:12px !important;margin:5px 0 !important;}
+  .st-key-monthgrid [data-testid="stHorizontalBlock"] {gap:3px !important;flex-wrap:nowrap !important;}
+  .st-key-monthgrid [data-testid="stColumn"] {min-width:0 !important;flex:1 1 0 !important;}
+  .st-key-monthgrid [data-testid="stVerticalBlock"] {gap:3px !important;}
+  .st-key-monthgrid button {min-height:44px !important;}
+  [data-testid="stDialog"] [role="dialog"] {max-height:90dvh !important;overflow-y:auto !important;}
+}
+</style>""",unsafe_allow_html=True)
