@@ -780,13 +780,15 @@ if active_page=='📸 추억':
         else:
             index=st.selectbox('행사 선택',range(len(completed)),format_func=lambda i:f"{completed[i]['completed']} · {completed[i]['title']}")
             h=completed[index]
+            import re
+            record_filename=re.sub(r'[\x00-\x1f<>:"/\\|?*]', '_', str(h['completed'])+'_'+str(h['title'])).strip(' .')[:150] or '행사기록'
             with st.container(height=225,border=False):
                 st.write(h.get('review') or '함께한 하루를 기억해요.')
                 if h.get('image'):
                     raw=base64.b64decode(h['image']);st.image(raw,width=240)
-                    st.download_button('사진 다운로드',raw,'wato_memory.jpg','image/jpeg')
-            st.download_button('이 행사 기록 PDF',memory_pdf([h],state['members']),'WATO_memory.pdf','application/pdf',use_container_width=True)
-            st.download_button('모든 완료 기록 PDF',memory_pdf(completed,state['members']),'WATO_memories.pdf','application/pdf',use_container_width=True)
+                    st.download_button('사진 다운로드',raw,record_filename+'.jpg','image/jpeg')
+            st.download_button('이 행사 기록 PDF',memory_pdf([h],state['members']),record_filename+'.pdf','application/pdf',use_container_width=True)
+            st.download_button('모든 완료 기록 PDF',memory_pdf(completed,state['members']),min(str(item['completed']) for item in completed)+'_'+max(str(item['completed']) for item in completed)+'_전체행사기록.pdf','application/pdf',use_container_width=True)
         if state.get('photos'):
             with st.popover('이전에 올린 사진'):
                 photos=state['photos'];idx=st.selectbox('사진 선택',range(len(photos)),format_func=lambda i:photos[i].get('description') or f'사진 {i+1}')
