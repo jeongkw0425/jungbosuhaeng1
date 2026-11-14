@@ -547,12 +547,7 @@ if st.session_state.get('user') not in state['members']:
     st.caption('이름 변경은 더보기에서 할 수 있어요. 링크를 아는 사람은 접속할 수 있으니 가족끼리만 공유하세요.')
     st.stop()
 user=st.session_state.user
-c1,c2=st.columns([3,2]);c1.write(f'**{user}님**, 함께할 날을 찾아봐요.')
-if c2.button('사용자 변경',key='user_switch',use_container_width=True):
-    st.session_state.pop('user',None)
-    st.session_state.date_selection=[]
-    st.session_state.date_select_mode=False
-    st.rerun()
+st.markdown(f'<div class="wato-user-heading"><strong>{html.escape(user)}님</strong>, 함께할 날을 찾아봐요.</div>',unsafe_allow_html=True)
 st.markdown("""<style>
 .block-container{padding-bottom:100px !important;}
 .st-key-bottom_nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,480px);background:#FFFFFF;z-index:999;padding:10px 6px calc(10px + env(safe-area-inset-bottom));border-top:1px solid #EEEEEE;box-shadow:0 -3px 18px #0000000D;box-sizing:border-box;}
@@ -767,6 +762,11 @@ if active_page=='📸 추억':
                 raw=base64.b64decode(photos[idx]['image']);st.image(raw,width=200);st.download_button('기존 사진 다운로드',raw,'wato_legacy.jpg','image/jpeg')
 if active_page=='⚙️ 더보기':
     with st.container(border=False):
+        if st.button('사용자 변경',key='user_switch',use_container_width=True):
+            st.session_state.pop('user',None)
+            st.session_state.date_selection=[]
+            st.session_state.date_select_mode=False
+            st.rerun()
         if st.button('⏱ 쿨타임 초기화',use_container_width=True):
             reset_cooldown_dialog(state,rev)
         if st.button('🗑 모두 초기화',use_container_width=True):
@@ -900,4 +900,15 @@ st.markdown("""<style>
 
 st.markdown("""<style>
 .st-key-user_switch button p {white-space:nowrap !important;word-break:keep-all !important;}
+</style>""",unsafe_allow_html=True)
+
+st.markdown("""<style>
+[data-testid="stHeadingWithActionElements"] h1 {font-size:2.15rem !important;line-height:1.3 !important;}
+.wato-user-heading {font-size:1.25rem;line-height:1.5;margin:2px 0 10px;color:#252525;overflow-wrap:anywhere;}
+.wato-user-heading strong {font-size:1.45rem;}
+@media (max-width:640px) {
+ h1 {font-size:2.05rem !important;}
+ .wato-user-heading {font-size:1.05rem;}
+ .wato-user-heading strong {font-size:1.3rem;}
+}
 </style>""",unsafe_allow_html=True)
