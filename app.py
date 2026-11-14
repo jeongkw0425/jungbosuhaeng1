@@ -186,7 +186,7 @@ def roulette_animation(labels, weights, selected):
 [data-testid="stDialog"] [role="dialog"] {max-height:85dvh !important;overflow-y:auto !important;}
 
 </style></head><body><div class="wrap"><canvas id="wheel" width="660" height="660" aria-label="행사 추첨 룰렛"></canvas>
-    <div id="result" role="status" aria-live="polite">두근두근… 룰렛이 돌아갑니다!</div><button id="replay" hidden>회전 다시 보기 · 재추첨 아님</button></div>
+    <div id="result" role="status" aria-live="polite">두근두근… 룰렛이 돌아갑니다!</div></div>
     <script>const cfg=__PAYLOAD__;const canvas=document.getElementById('wheel'),ctx=canvas.getContext('2d');
     const total=cfg.weights.reduce((a,b)=>a+b,0), tau=Math.PI*2;
     const colors=['#D92D4C','#A83165','#B45B19','#4D667F','#6C4D99','#13776D'];
@@ -198,19 +198,19 @@ def roulette_animation(labels, weights, selected):
       const label=cfg.labels[i];ctx.fillText(label.length>10?label.slice(0,9)+'…':label,0,0);ctx.restore();});
       ctx.beginPath();ctx.arc(0,0,48,0,tau);ctx.fillStyle='#fff';ctx.fill();ctx.fillStyle='#D92D4C';ctx.font='bold 20px sans-serif';ctx.textAlign='center';ctx.fillText('WATO',0,7);ctx.restore();
       ctx.beginPath();ctx.moveTo(312,15);ctx.lineTo(348,15);ctx.lineTo(330,60);ctx.closePath();ctx.fillStyle='#152D41';ctx.fill();}
-    function run(){document.getElementById('replay').hidden=true;document.getElementById('result').textContent='두근두근… 룰렛이 돌아갑니다!';
+    function run(){document.getElementById('result').textContent='두근두근… 룰렛이 돌아갑니다!';
       const b=boundaries[cfg.selected],mid=(b[0]+b[1])/2,target=6*tau+(tau-mid),start=performance.now();
       const duration=matchMedia('(prefers-reduced-motion: reduce)').matches?100:4600;
       function frame(now){const t=Math.min(1,(now-start)/duration),ease=1-Math.pow(1-t,4);paint(target*ease);
-      if(t<1)requestAnimationFrame(frame);else{document.getElementById('result').textContent='🎉 '+cfg.labels[cfg.selected]+' 당첨!';document.getElementById('replay').hidden=false;}}
+      if(t<1)requestAnimationFrame(frame);else{document.getElementById('result').textContent='🎉 '+cfg.labels[cfg.selected]+' 당첨!';}}
       requestAnimationFrame(frame);}
-    document.getElementById('replay').onclick=run;run();</script></body></html>"""
+    run();</script></body></html>"""
     components.html(template.replace('__PAYLOAD__',payload),height=415,scrolling=False)
 
 
 @st.dialog('🎡 WATO 행운의 룰렛',width='small')
 def roulette_dialog(category, title=None):
-    st.caption('이번 추첨 결과를 보여주는 룰렛입니다. 다시 보기는 재추첨이 아니므로 같은 결과가 나옵니다.')
+    st.caption('이번 추첨 결과를 룰렛으로 확인하세요.')
     if title is None:
         labels=['소목','중목','대목']
         roulette_animation(labels,[80,15,5],labels.index(category))
