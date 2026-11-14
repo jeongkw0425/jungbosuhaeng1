@@ -148,6 +148,21 @@ def intersect(a,b):
     return out
 
 
+def event_dates_available(state,start,end):
+    # Overnight trips require every family member free on every trip date.
+    event=state.get('current') or {}
+    overnight=int(event.get('minimum') or 0)>=24 or '1박' in str(event.get('title',''))
+    if not overnight:
+        return True
+    last=max(end.date(),start.date()+timedelta(days=1))
+    day=start.date()
+    while day<=last:
+        if day>LAST or any(day.isoformat() in state.get('blocked',{}).get(member,[]) for member in state['members']):
+            return False
+        day+=timedelta(days=1)
+    return True
+
+
 def slots(state,hours):
     members=state['members']
     if not members:return []
@@ -161,7 +176,9 @@ def slots(state,hours):
         at=lo.replace(minute=0,second=0,microsecond=0)
         if at<lo:at+=timedelta(hours=1)
         while at+duration<=hi and len(result)<200:
-            result.append((at,at+duration));at+=timedelta(hours=1)
+            if event_dates_available(state,at,at+duration):
+                result.append((at,at+duration))
+            at+=timedelta(hours=1)
     return result
 
 
@@ -635,7 +652,12 @@ def schedule_dialog(state,rev):
             return f'{a:%H:%M} ~ {b:%H:%M}' if a.date()==b.date() else f'{a:%H:%M} 출발 · {b.month}월 {b.day}일 {b:%H:%M} 종료'
         choice=st.selectbox('시간 선택',day_slots,format_func=slot_label)
         if st.button('이 시간으로 일정 제안',type='primary'):
-            a,b=candidates[choice];current['scheduled']=[a.isoformat(),b.isoformat()];current['votes']={}
+            a,b=candidates[choice]
+            latest,latest_rev=load()
+            if latest_rev!=rev or not event_dates_available(latest,a,b):
+                st.error('오류: 가족 일정이 변경됐어요. 창을 다시 열어 가능한 연속 날짜를 확인해 주세요.')
+                return
+            current['scheduled']=[a.isoformat(),b.isoformat()];current['votes']={} 
             commit(state,rev,'일정을 제안했어요. 가족 모두 확인해 주세요.')
 
 
