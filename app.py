@@ -813,24 +813,39 @@ st.markdown("""<style>
 }
 </style>""",unsafe_allow_html=True)
 
-# Uniform navigation tiles: no native radio dots, one red active indicator.
+# Navigation: target the native radio marker, never the text wrapper.
 st.markdown("""<style>
-.st-key-top_nav [role="radiogroup"] {grid-template-columns:repeat(4,minmax(0,1fr)) !important;align-items:stretch !important;}
-.st-key-top_nav [role="radiogroup"] label {
-  box-sizing:border-box !important;position:relative !important;
-  width:100% !important;min-width:0 !important;height:54px !important;
-  padding:15px 2px 5px !important;gap:0 !important;
+.st-key-top_nav {width:100% !important;}
+.st-key-top_nav [data-testid="stRadio"] {width:100% !important;}
+.st-key-top_nav [role="radiogroup"] {
+ display:grid !important;grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+ width:100% !important;gap:4px !important;align-items:stretch !important;
 }
-.st-key-top_nav [role="radiogroup"] label > div:first-of-type {display:none !important;}
+.st-key-top_nav [role="radiogroup"] label {
+ display:flex !important;justify-content:center !important;align-items:center !important;
+ box-sizing:border-box !important;position:relative !important;
+ width:100% !important;min-width:0 !important;height:52px !important;
+ margin:0 !important;padding:14px 2px 4px !important;gap:0 !important;
+}
+/* Restore label content hidden by the previous overly broad rule. */
+.st-key-top_nav [role="radiogroup"] label > div:first-child {display:flex !important;}
+.st-key-top_nav [role="radiogroup"] label > div {min-width:0 !important;}
 .st-key-top_nav [role="radiogroup"] label [data-testid="stMarkdownContainer"] {display:block !important;min-width:0 !important;}
+.st-key-top_nav [role="radiogroup"] label [data-baseweb="radio"] > div:first-child {display:none !important;}
+.st-key-top_nav [role="radiogroup"] label > div:first-child:not(:has([data-testid="stMarkdownContainer"])):not([data-testid="stMarkdownContainer"]) {display:none !important;}
 .st-key-top_nav [role="radiogroup"] label p {
-  white-space:nowrap !important;word-break:keep-all !important;
-  font-size:12px !important;line-height:20px !important;margin:0 !important;
+ white-space:nowrap !important;word-break:keep-all !important;
+ font-size:12px !important;line-height:20px !important;margin:0 !important;color:#252525 !important;
 }
 .st-key-top_nav [role="radiogroup"] label:has(input:checked)::after {
-  content:"";position:absolute;top:6px;left:calc(50% - 3px);
-  width:6px;height:6px;border-radius:50%;background:#D92D4C;
+ content:"";position:absolute;top:5px;left:calc(50% - 3px);
+ width:6px;height:6px;border-radius:50%;background:#D92D4C;
 }
 .weekdays {height:auto !important;min-height:28px !important;line-height:24px !important;padding:2px 0 !important;overflow:visible !important;}
 .weekdays span {display:block;line-height:24px !important;min-height:24px !important;overflow:visible !important;}
+</style>""",unsafe_allow_html=True)
+
+st.markdown("""<style>
+.st-key-top_nav > div {width:100% !important;}
+.st-key-top_nav [data-testid="stElementContainer"] {width:100% !important;min-width:0 !important;}
 </style>""",unsafe_allow_html=True)
