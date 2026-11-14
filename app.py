@@ -849,3 +849,16 @@ st.markdown("""<style>
 .st-key-top_nav > div {width:100% !important;}
 .st-key-top_nav [data-testid="stElementContainer"] {width:100% !important;min-width:0 !important;}
 </style>""",unsafe_allow_html=True)
+
+st.markdown("""<style>
+.st-key-top_nav label[data-baseweb="radio"] > div:first-of-type {
+ display:none !important;
+}
+.st-key-top_nav label[data-baseweb="radio"] > input[type="radio"] {
+ position:absolute !important;opacity:0 !important;width:1px !important;height:1px !important;
+}
+.st-key-top_nav label[data-baseweb="radio"] > div:has([data-testid="stMarkdownContainer"]),
+.st-key-top_nav label[data-baseweb="radio"] > div[data-testid="stMarkdownContainer"] {
+ display:block !important;
+}
+</style>""",unsafe_allow_html=True)
