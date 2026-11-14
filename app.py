@@ -711,7 +711,7 @@ if active_page=='📅 가족 달력':
                         label=f'{d.day}\n{"✓ 모두" if count==len(state["members"]) else str(count)+"명"}'
                         selected=d.isoformat() in st.session_state.date_selection
                         if selected:label=f'☑ {d.day}\n선택됨'
-                        elif d.isoformat() in state.get('blocked',{}).get(user,[]):label=f'{d.day}\n내 일정 ✕'
+                        elif d.isoformat() in state.get('blocked',{}).get(user,[]):label=f'{d.day}\n참여 불가'
                         if col.button(label,key='day'+d.isoformat(),type='primary' if selected else 'secondary',disabled=d.month!=m or not TODAY<=d<=LAST,use_container_width=True):
                             if st.session_state.date_select_mode:
                                 values=set(st.session_state.date_selection)
@@ -787,5 +787,22 @@ st.markdown("""<style>
   .st-key-monthgrid [data-testid="stVerticalBlock"] {gap:3px !important;}
   .st-key-monthgrid button {min-height:44px !important;}
   [data-testid="stDialog"] [role="dialog"] {max-height:90dvh !important;overflow-y:auto !important;}
+}
+</style>""",unsafe_allow_html=True)
+
+# Suppress browser scroll chaining/pull-to-refresh where supported.
+# Keep ordinary content scrolling and calendar pointer gestures intact.
+st.markdown("""<style>
+@media (max-width: 640px) {
+  html, body, [data-testid="stApp"],
+  [data-testid="stAppViewContainer"],
+  [data-testid="stMain"], section.main {
+    overscroll-behavior-y: none !important;
+  }
+  [data-testid="stDialog"] [role="dialog"],
+  [data-testid="stPopoverBody"] {
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 </style>""",unsafe_allow_html=True)
