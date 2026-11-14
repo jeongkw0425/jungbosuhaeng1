@@ -565,15 +565,46 @@ st.markdown("""<style>
 st.markdown("""<style>
 .block-container{padding-bottom:1rem !important;}
 .st-key-top_nav{position:static !important;width:100% !important;margin:8px 0 14px;}
-.st-key-top_nav [role="radiogroup"]{display:grid !important;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px !important;width:100%;}
+.st-key-top_nav [role="radiogroup"]{display:grid !important;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px !important;width:100%;}
 .st-key-top_nav [role="radiogroup"] label{display:flex;justify-content:center;align-items:center;min-width:0;margin:0 !important;padding:9px 0 !important;border:1px solid #E7E7E7;border-radius:10px;background:#FFF4F6;}
 .st-key-top_nav [role="radiogroup"] label>div:first-child{display:none !important;}
 .st-key-top_nav [role="radiogroup"] label p{text-align:center;white-space:pre-line;font-size:12px !important;line-height:1.5 !important;margin:0;}
 .st-key-top_nav input[type="radio"]{position:absolute;opacity:0;width:0;height:0;}
 .st-key-top_nav label:has(input:checked){border-color:#D92D4C;background:#FFE4EA;}
 </style>""",unsafe_allow_html=True)
-home,cal,mem,extra=st.tabs(['🎲 다음 행사','📅 가족 달력','📸 추억','⚙️ 더보기'])
-with home:
+@st.dialog('📅 행사 일정 정하기',width='small')
+def schedule_dialog(state,rev):
+    current=state['current']
+    with st.form('duration'):
+        duration=st.number_input('이동·휴식까지 포함한 연속 필요 시간',min_value=int(current['minimum']),max_value=240,value=int(current['duration']),step=1)
+        if st.form_submit_button('필요 시간 적용'):
+            current['duration']=duration;current['votes']={};commit(state,rev,'필요 시간을 변경했습니다.')
+    candidates=slots(state,current['duration'])
+    missing=[m for m in state['members'] if not intervals(state,m)]
+    if missing:st.info('가능 시간 미등록: '+', '.join(missing))
+    if not candidates:
+        st.info('모두 가능한 연속 날짜가 없어요. 필요한 시간이나 제외 날짜를 확인해 주세요.')
+    else:
+        st.caption('교집합에서 이른 순으로 최대 200개 후보를 표시합니다. 모두 같은 장소에서 만날 수 있는지 별도로 확인하세요.')
+        months=sorted({(a.year,a.month) for a,b in candidates})
+        selected_month=st.selectbox('월 선택',months,format_func=lambda x:f'{x[0]}년 {x[1]}월')
+        month_slots=[i for i,(a,b) in enumerate(candidates) if (a.year,a.month)==selected_month]
+        days=sorted({candidates[i][0].date() for i in month_slots})
+        selected_day=st.selectbox('날짜 선택',days,format_func=lambda d:f'{d.day}일 ({"월화수목금토일"[d.weekday()]})')
+        day_slots=[i for i in month_slots if candidates[i][0].date()==selected_day]
+        def slot_label(i):
+            a,b=candidates[i]
+            return f'{a:%H:%M} ~ {b:%H:%M}' if a.date()==b.date() else f'{a:%H:%M} 출발 · {b.month}월 {b.day}일 {b:%H:%M} 종료'
+        choice=st.selectbox('시간 선택',day_slots,format_func=slot_label)
+        if st.button('이 시간으로 일정 제안',type='primary'):
+            a,b=candidates[choice];current['scheduled']=[a.isoformat(),b.isoformat()];current['votes']={}
+            commit(state,rev,'일정을 제안했어요. 가족 모두 확인해 주세요.')
+
+
+# Keep navigation in session state across every widget-triggered rerun.
+with st.container(key='top_nav'):
+    active_page=st.radio('메뉴',['🎲 다음 행사','📅 가족 달력','📸 추억','⚙️ 더보기'],key='wato_active_page',horizontal=True,label_visibility='collapsed')
+if active_page=='🎲 다음 행사':
     with st.container(border=False):
         current=state['current'];next_date=date.fromisoformat(state['next_draw']) if state['next_draw'] else TODAY
         if not current:
@@ -597,34 +628,14 @@ with home:
                 commit(state,rev,'행사가 정해졌어요! 가족 달력에 안 되는 날을 제외해 주세요.',animation={'category':category,'title':title})
         else:
             st.markdown(f'<div class="card"><small>{current["category"]} · 다음 가족 행사</small><h3>{html.escape(current["title"])}</h3>완료 후 {COOLDOWN[current["category"]]}개월 휴식</div>',unsafe_allow_html=True)
-            if 'draw_ticket' in current:st.caption(f"유형 추첨 번호 {current['draw_ticket']}/100 · 행사 번호 {current.get('event_index','—')}/{len(EVENTS[current['category']])}")
-            if current['note']:st.warning(current['note'])
-            st.caption('행사·축제 운영일, 요금, 예약, 날씨는 공식 안내로 확인하세요. 추첨은 예약을 보장하지 않습니다.')
+            with st.popover('행사 상세 · 추첨 정보',use_container_width=True):
+                if 'draw_ticket' in current:st.caption(f"유형 추첨 번호 {current['draw_ticket']}/100 · 행사 번호 {current.get('event_index','—')}/{len(EVENTS[current['category']])}")
+                if current['note']:st.warning(current['note'])
+                st.caption('행사·축제 운영일, 요금, 예약, 날씨는 공식 안내로 확인하세요. 추첨은 예약을 보장하지 않습니다.')
             if not current['scheduled']:
-                with st.form('duration'):
-                    duration=st.number_input('이동·휴식까지 포함한 연속 필요 시간',min_value=int(current['minimum']),max_value=240,value=int(current['duration']),step=1)
-                    if st.form_submit_button('필요 시간 적용'):
-                        current['duration']=duration;current['votes']={};commit(state,rev,'필요 시간을 변경했습니다.')
-                candidates=slots(state,current['duration'])
-                missing=[m for m in state['members'] if not intervals(state,m)]
-                if missing:st.info('가능 시간 미등록: '+', '.join(missing))
-                if not candidates:
-                    st.info('모두 가능한 연속 날짜가 없어요. 필요한 시간이나 제외 날짜를 확인해 주세요.')
-                else:
-                    st.caption('교집합에서 이른 순으로 최대 200개 후보를 표시합니다. 모두 같은 장소에서 만날 수 있는지 별도로 확인하세요.')
-                    months=sorted({(a.year,a.month) for a,b in candidates})
-                    selected_month=st.selectbox('월 선택',months,format_func=lambda x:f'{x[0]}년 {x[1]}월')
-                    month_slots=[i for i,(a,b) in enumerate(candidates) if (a.year,a.month)==selected_month]
-                    days=sorted({candidates[i][0].date() for i in month_slots})
-                    selected_day=st.selectbox('날짜 선택',days,format_func=lambda d:f'{d.day}일 ({"월화수목금토일"[d.weekday()]})')
-                    day_slots=[i for i in month_slots if candidates[i][0].date()==selected_day]
-                    def slot_label(i):
-                        a,b=candidates[i]
-                        return f'{a:%H:%M} ~ {b:%H:%M}' if a.date()==b.date() else f'{a:%H:%M} 출발 · {b.month}월 {b.day}일 {b:%H:%M} 종료'
-                    choice=st.selectbox('시간 선택',day_slots,format_func=slot_label)
-                    if st.button('이 시간으로 일정 제안',type='primary'):
-                        a,b=candidates[choice];current['scheduled']=[a.isoformat(),b.isoformat()];current['votes']={}
-                        commit(state,rev,'일정을 제안했어요. 가족 모두 확인해 주세요.')
+                st.write('가족 모두 가능한 날짜에서 일정을 정해 주세요.')
+                if st.button('📅 일정 정하기',type='primary',use_container_width=True):
+                    schedule_dialog(state,rev)
             else:
                 a,b=map(datetime.fromisoformat,current['scheduled'])
                 # Revalidate against current availability so later edits cannot silently invalidate a plan.
@@ -643,7 +654,7 @@ with home:
             if st.button('행사 진행이 어려워요',use_container_width=True):
                 cancel_event_dialog(state,rev)
 
-with cal:
+if active_page=='📅 가족 달력':
     with st.container(border=False):
         st.session_state.setdefault('date_selection',[])
         st.session_state.setdefault('date_select_mode',False)
@@ -709,7 +720,7 @@ with cal:
                                 st.session_state.date_selection=sorted(values)
                                 st.rerun()
                             else:day_dialog(d)
-with mem:
+if active_page=='📸 추억':
     with st.container(border=False):
         st.subheader('우리 가족의 추억')
         import base64
@@ -729,17 +740,17 @@ with mem:
             with st.popover('이전에 올린 사진'):
                 photos=state['photos'];idx=st.selectbox('사진 선택',range(len(photos)),format_func=lambda i:photos[i].get('description') or f'사진 {i+1}')
                 raw=base64.b64decode(photos[idx]['image']);st.image(raw,width=200);st.download_button('기존 사진 다운로드',raw,'wato_legacy.jpg','image/jpeg')
-with extra:
+if active_page=='⚙️ 더보기':
     with st.container(border=False):
         if st.button('⏱ 쿨타임 초기화',use_container_width=True):
             reset_cooldown_dialog(state,rev)
         if st.button('🗑 모두 초기화',use_container_width=True):
             reset_all_dialog(rev)
-        with st.expander('전체 행사 후보 · 각 유형 14개'):
+        with st.popover('전체 행사 후보 · 각 유형 14개',use_container_width=True):
             for category,items in EVENTS.items():
                 st.markdown('**'+category+'**')
                 for title,duration,minimum,note in items:st.write('• '+title+((' — '+note) if note else ''))
-        with st.expander('가족 이름 설정'):
+        with st.popover('가족 이름 설정',use_container_width=True):
             st.caption('이름은 쉼표로 구분하세요. 변경하면 이전 이름의 가능 시간은 삭제되고 제안 일정의 확인도 초기화됩니다. 진행 중 행사는 유지됩니다.')
             with st.form('members'):
                 names=st.text_input('가족 이름',value=', '.join(state['members']))
@@ -752,7 +763,8 @@ with extra:
                         state['members']=members;state['availability']={n:v for n,v in state['availability'].items() if n in members};state['blocked']={n:v for n,v in state.get('blocked',{}).items() if n in members}
                         if state['current']:state['current']['votes']={}
                         commit(state,rev,'가족 이름을 저장했습니다.')
-        st.info('규칙: 소목 80% / 중목 15% / 대목 5%. 완료일부터 2 / 4 / 8개월 후 다음 추첨. 재추첨 없이 날짜를 조율하되, 안전과 건강은 언제나 우선입니다.')
+        with st.popover('이용 규칙',use_container_width=True):
+            st.info('소목 80% / 중목 15% / 대목 5%. 완료일부터 2 / 4 / 8개월 후 다음 추첨. 재추첨 없이 날짜를 조율하되, 안전과 건강은 언제나 우선입니다.')
 
 # Open the animation only after a successful, committed draw.
 if st.session_state.get('roulette_pending'):
