@@ -547,13 +547,12 @@ if st.session_state.get('user') not in state['members']:
     st.caption('이름 변경은 더보기에서 할 수 있어요. 링크를 아는 사람은 접속할 수 있으니 가족끼리만 공유하세요.')
     st.stop()
 user=st.session_state.user
-c1,c2,c3=st.columns([3,1,1]);c1.write(f'**{user}님**, 함께할 날을 찾아봐요.')
-if c2.button('사용자 변경'):
+c1,c2=st.columns([3,2]);c1.write(f'**{user}님**, 함께할 날을 찾아봐요.')
+if c2.button('사용자 변경',key='user_switch',use_container_width=True):
     st.session_state.pop('user',None)
     st.session_state.date_selection=[]
     st.session_state.date_select_mode=False
     st.rerun()
-if c3.button('새로고침'):st.rerun()
 st.markdown("""<style>
 .block-container{padding-bottom:100px !important;}
 .st-key-bottom_nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,480px);background:#FFFFFF;z-index:999;padding:10px 6px calc(10px + env(safe-area-inset-bottom));border-top:1px solid #EEEEEE;box-shadow:0 -3px 18px #0000000D;box-sizing:border-box;}
@@ -780,8 +779,8 @@ if active_page=='⚙️ 더보기':
             st.caption('이름은 쉼표로 구분하세요. 변경하면 이전 이름의 가능 시간은 삭제되고 제안 일정의 확인도 초기화됩니다. 진행 중 행사는 유지됩니다.')
             with st.form('members'):
                 names=st.text_input('가족 이름',value=', '.join(state['members']))
-                acknowledge=st.checkbox('가족과 이름 변경을 합의했습니다.')
-                if st.form_submit_button('가족 이름 저장'):
+                acknowledge=st.checkbox('가족과 이름 추가 및 변경을 합의했습니다.')
+                if st.form_submit_button('가족 추가·변경 저장'):
                     members=list(dict.fromkeys(n.strip() for n in names.split(',') if n.strip()))
                     if not acknowledge:st.warning('변경에 동의해 주세요.')
                     elif not 2<=len(members)<=12 or any(len(n)>20 for n in members):st.error('가족은 2~12명, 이름은 20자 이하로 입력하세요.')
@@ -897,4 +896,8 @@ st.markdown("""<style>
  color:#252525 !important;border:1px solid #E7E7E7 !important;border-radius:10px !important;
 }
 .st-key-top_nav button p {white-space:nowrap !important;font-size:11px !important;line-height:20px !important;margin:0 !important;}
+</style>""",unsafe_allow_html=True)
+
+st.markdown("""<style>
+.st-key-user_switch button p {white-space:nowrap !important;word-break:keep-all !important;}
 </style>""",unsafe_allow_html=True)
